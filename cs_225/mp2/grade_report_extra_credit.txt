@@ -1,0 +1,26 @@
+Grading r6863 by wsun26 committed on Mon Feb  1 01:45:49 CST 2016
+Monad Autograder
+Testing mp2.1 at 2016-02-03 00:37:59
+
+"First, solve the problem. Then, write the code." ~ John Johnson
+
+Setting up test environment...
+Compiling...
+================================================================
+
+
+Running tests...
+================================================================
+InvertColorsEven  . . [30 pts] - passed
+FlipLeftEven  . . . . [15 pts] - passed
+FlipLeftOdd . . . . . [15 pts] - passed
+AdjustBrightnessEven  [10 pts] - passed
+AdjustBrightnessEven2 [10 pts] - passed
+AdjustBrightnessEven3 [10 pts] - passed
+ImageMakefile . . . . [10 pts] - passed
+
+
+Total score...
+================================================================
+TOTAL SCORE: 100
+

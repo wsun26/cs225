@@ -1,0 +1,194 @@
+#include "scene.h"
+
+using namespace std; 
+Scene::Scene(int max){
+	Image_Array = new Image*[max]; 
+	_xpos = new int[max]; 
+	_ypos = new int[max];  
+	for(int i = 0; i < max; i++){ 
+		Image_Array[i] = NULL; 
+		_xpos[i] = 0; 
+		_ypos[i] = 0; 
+	}
+	_max = max; 	
+};
+
+Scene::~Scene(){
+	_clear(); 
+};
+
+Scene::Scene(const Scene &source){
+	_copy(source); 		
+}
+
+void Scene::_copy(const Scene &source){
+	//if(scene.Image_Array[i] == NULL)
+	_max = source._max; 
+	Image_Array = new Image*[source._max]; 
+	_xpos = new int[source._max]; 
+	_ypos = new int[source._max]; 
+	for(int i = 0; i < source._max; i++){
+		Image *temp = NULL; 
+		if(source.Image_Array[i] != NULL){
+			temp = new Image(); 
+			*temp = *(source.Image_Array[i]);
+		}
+		Image_Array[i] = temp; 
+		_xpos[i] = source._xpos[i]; 
+		_ypos[i] = source._ypos[i]; 
+	}
+}
+
+void Scene::_clear(){
+	for(int i = 0; i < _max; i++){
+		delete Image_Array[i]; 
+		
+	}
+	delete [] Image_Array; 
+	delete [] _xpos; 
+	delete [] _ypos; 		
+}
+
+const Scene &Scene::operator=(const Scene &source){
+	if(this == &source) return *this; 
+	_clear(); 
+	_copy(source); 
+	return *this; 
+}
+
+void Scene::changemaxlayers(int newmax){
+	if(newmax < _max){
+		for(int i = newmax; i < _max; i++){
+			if(Image_Array[i] != NULL){
+				cout << "invalid newmax" << endl; 
+				return; 
+			}
+		}
+	}
+	Image** New_Image_Array = new Image*[newmax];
+	int *new_xpos = new int[newmax];
+	int *new_ypos = new int[newmax];  
+	for(int i = 0; i < newmax; i++){
+		New_Image_Array[i] = NULL;
+		new_xpos[i] = 0; 
+		new_ypos[i] = 0;  
+	}
+
+	if(newmax <= _max){
+		for(int i = 0; i < newmax; i++){
+			if(Image_Array != NULL){
+				New_Image_Array[i] = Image_Array[i]; 
+				new_xpos[i] = _xpos[i]; 
+				new_ypos[i] = _ypos[i]; 
+			}
+		}
+	}
+	if(newmax > _max){
+		for(int i = 0; i < _max; i++){
+			if(Image_Array != NULL){
+				New_Image_Array[i] = Image_Array[i]; 
+				new_xpos[i] = _xpos[i]; 
+				new_ypos[i] = _ypos[i]; 
+			}
+		}
+	}
+	delete [] Image_Array; 
+	delete [] _xpos; 
+	delete [] _ypos; 
+	Image_Array = New_Image_Array; 
+	_xpos = new_xpos; 
+	_ypos = new_ypos; 
+	_max = newmax; 
+}
+
+void Scene::addpicture(const char* FileName, int index, int x, int y){
+	if(index < 0 || index > _max-1){
+		cout << "index out of bounds" << endl; 
+		return; 
+	}
+	Image *in_image = new Image();
+	in_image->readFromFile(FileName); 
+	if(Image_Array[index] != NULL){
+		delete Image_Array[index]; 
+	}
+	Image_Array[index] = in_image; 
+	_xpos[index] = x;  
+	_ypos[index] = y; 
+}
+
+void Scene::changelayer(int index, int newindex){
+	if(index < 0 || newindex < 0 || index > _max-1 || newindex > _max-1){
+		cout << "invalid index" << endl;
+		return; 
+	}
+	if(index == newindex) return;
+	if(Image_Array[newindex] != NULL){ 
+		delete Image_Array[newindex]; 
+	}
+	Image_Array[newindex] = Image_Array[index]; 
+	Image_Array[index] = NULL; 
+	_xpos[newindex] = _xpos[index]; 
+	_ypos[newindex] = _ypos[index]; 
+}
+
+void Scene::translate(int index, int xcoord, int ycoord){
+	if(index < 0 || index > _max-1){
+		cout << "invalid index" << endl; 
+		return; 
+	}
+	_xpos[index] = xcoord; 
+	_ypos[index] = ycoord; 
+}
+
+void Scene::deletepicture(int index){
+	if(index < 0 || index > _max-1){
+		cout << "invalid index" << endl; 
+		return; 
+	}
+	delete Image_Array[index]; 
+	Image_Array[index] = NULL; 
+}
+
+Image *Scene::getpicture(int index) const{
+	if(index < 0 || index > _max-1){
+		cout << "invalid index" << endl; 
+		return NULL; 
+	}
+	Image *image_ptr = Image_Array[index]; 
+	return image_ptr; 
+}
+
+Image Scene::drawscene() const{
+	size_t width = 0, height = 0; 
+	for(int i = 0; i < _max; i++){
+		if(Image_Array[i] != NULL){
+			if(Image_Array[i]->width() + _xpos[i] > width){
+				width = Image_Array[i]->width() + _xpos[i]; 
+			}
+			if(Image_Array[i]->height() + _ypos[i] > height){
+				height = Image_Array[i]->height() + _ypos[i]; 
+			}
+		}
+	}
+	Image output; 
+	output.resize(width, height); 
+	for(int i = 0; i < _max; i++){
+		if(Image_Array[i] == NULL){
+		continue; 
+		}
+		for(size_t x = 0; x < Image_Array[i]->width(); x++){
+			for(size_t y = 0; y < Image_Array[i]->height(); y++){
+				output(x + _xpos[i], y + _ypos[i])->red = (*Image_Array[i])(x, y)->red; 
+				output(x + _xpos[i], y + _ypos[i])->green = (*Image_Array[i])(x, y)->green; 
+				output(x + _xpos[i], y + _ypos[i])->blue = (*Image_Array[i])(x, y)->blue; 
+			}
+		}
+	}
+	return output; 
+}
+
+
+
+
+
+

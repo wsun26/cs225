@@ -1,0 +1,299 @@
+/* Your code here! */
+#include "maze.h"
+#include <stdlib.h>
+#include <map>
+#include <queue>
+#include <iostream>
+
+using namespace std; 
+
+SquareMaze::SquareMaze(){
+	
+}
+
+void SquareMaze::makeMaze(int width, int height){
+	w = width; 
+	h = height; 
+	int num = 0; 
+	int size = width * height; 
+	int space = rand() % size; 
+	maze.addelements(size); 
+	for(int i = 0; i < size; i++){
+		bottomWall.push_back(true); 
+		rightWall.push_back(true); 
+		visited.push_back(false); 
+	}
+	vector<int> temp; 
+	temp.push_back(space); 
+	visited[space] = true; 
+	while(num < size-1){
+		int space_idx = rand() % temp.size(); 
+		int space = temp[space_idx]; 
+		vector<int> adjacent; 
+		if(space%width < width-1 && maze.find(space) != maze.find(space+1)){
+			adjacent.push_back(0); 
+		}
+		if(space/width < height-1 && maze.find(space) != maze.find(space+width)){
+			adjacent.push_back(1); 
+		}
+		if(space%width > 0 && maze.find(space) != maze.find(space-1)){
+			adjacent.push_back(2); 
+		}
+		if(space/width > 0 && maze.find(space) != maze.find(space-width)){
+			adjacent.push_back(3); 
+		}
+		if(adjacent.size() > 0){
+			int adj_idx = rand() % adjacent.size(); 
+			int adj_dir = adjacent[adj_idx]; 
+			int next; 
+			if(adj_dir == 0){
+				next = space+1; 
+				maze.setunion(space, space+1); 
+				rightWall[space] = false; 
+				num++; 
+			}
+			if(adj_dir == 1){
+				next = space+width; 
+				maze.setunion(space, space+width); 
+				bottomWall[space] = false; 
+				num++; 
+			}
+			if(adj_dir == 2){
+				next = space-1; 
+				maze.setunion(space, space-1); 
+				rightWall[space-1] = false; 
+				num++; 
+			}
+			if(adj_dir == 3){
+				next = space-width; 
+				maze.setunion(space, space-width); 
+				bottomWall[space-width] = false; 
+				num++; 
+			}
+			visited[next] = true; 
+			temp.push_back(next); 
+		} else {
+			temp.erase(temp.begin()+space_idx); 
+		}
+	}
+
+
+
+
+
+//		int dir = rand() % 4; 
+/*		if(dir == 0){
+			if(space % width == width-1) continue; 
+			if(maze.find(space) == maze.find(space+1)) continue; 
+			maze.setunion(space, space+1); 
+			rightWall[space] = 1; 
+			num++; 
+		} else if(dir == 1){
+			if(space/width == height-1) continue; 
+			if(maze.find(space) == maze.find(space+width)) continue; 
+			maze.setunion(space, space+width); 
+			bottomWall[space] = 1; 
+			num++; 
+		} else if(dir == 2){
+			if(maze.find(space) == maze.find(space-1)) continue; 
+			maze.setunion(space, space-1); 
+			rightWall[space-1] = 1; 
+			num++; 
+		}else if(dir == 3){
+			if(maze.find(space) == maze.find(space-width)) continue; 
+			maze.setunion(space, space-width); 
+			bottomWall[space-width] = 1; 
+			num++; 
+		}
+	}
+*/
+}
+
+bool SquareMaze::canTravel(int x, int y, int dir) const{
+	int space = x + y*w; 
+	if(dir == 0){
+		if(x < w-1){
+			if(rightWall[space] == false) return true; 
+		}
+	}
+	if(dir == 1){
+		if(y < h-1){
+			if(bottomWall[space] == false) return true; 
+		}
+	}
+	if(dir == 2){
+		if(x > 0){
+			if(rightWall[space-1] == false) return true; 
+		}
+	}
+	if(dir == 3){
+		if(y > 0){
+			if(bottomWall[space-w] == false) return true; 
+		}
+	}
+	return false; 
+}
+
+void SquareMaze::setWall(int x, int y, int dir, bool exists){
+	int space = x + y*w; 
+	if(dir == 0){
+		if(x < w-1){
+			rightWall[space] = exists; 
+		}
+	}
+	if(dir == 1){
+		if(y < h-1){
+			bottomWall[space] = exists; 
+		}
+	}
+}
+
+vector<int> SquareMaze::solveMaze(){
+	DisjointSets visited; 
+	visited.addelements(w*h); 
+	map<int, int> dir; 
+	int dist = 0; 
+	int final_dist = 0; 
+	int end = 0; 
+	queue<int> q; 
+	q.push(0); 
+	while(!q.empty()){
+		dist++; 
+		int space = q.front(); 
+		q.pop(); 
+		int x = space%w; 
+		int y = space/w; 
+		if(y == h-1 && dist > final_dist){
+			final_dist = dist; 
+			end = space; 
+		}
+		if(y == h-1 && dist == final_dist && space%w > end%w){
+			final_dist = dist; 
+			end = space; 
+		}	
+		if(canTravel(x, y, 0) && visited.find(space) != visited.find(space+1)){
+			q.push(space+1); 
+			dir[space+1] = 0; 
+			visited.setunion(space, space+1); 
+		}
+		if(canTravel(x, y, 1) && visited.find(space) != visited.find(space+w)){
+			q.push(space+w); 
+			dir[space+w] = 1; 
+			visited.setunion(space, space+w); 
+		}
+		if(canTravel(x, y, 2) && visited.find(space) != visited.find(space-1)){
+			q.push(space-1); 
+			dir[space-1] = 2; 
+			visited.setunion(space, space-1); 
+		}
+		if(canTravel(x, y, 3) && visited.find(space) != visited.find(space-w)){
+			q.push(space-w); 
+			dir[space-w] = 3; 
+			visited.setunion(space, space-w); 
+		}
+	}
+	vector<int> ret; 
+	int idx = end; 
+	while(idx != 0){
+		ret.insert(ret.begin(), dir[idx]); 	
+		if(dir[idx] == 0){
+			idx -= 1; 
+		}
+		else if(dir[idx] == 1){
+			idx -= w; 
+		}
+		else if(dir[idx] == 2){
+			idx += 1; 
+		}
+		else if(dir[idx] == 3){
+			idx += w; 
+		}
+	}
+	return ret; 
+}
+
+PNG* SquareMaze::drawMaze() const{
+	PNG* ret = new PNG(w*10+1, h*10+1); 
+	for(int i = 10; i < w*10+1; i++){
+		(*ret)(i,0)->red = 0;
+		(*ret)(i,0)->green = 0;
+		(*ret)(i,0)->blue = 0;
+	}
+	for(int i = 0; i < h*10+1; i++){
+		(*ret)(0,i)->red = 0;
+		(*ret)(0,i)->green = 0;
+		(*ret)(0,i)->blue = 0;
+	}		
+	for(int i = 0; i < w; i++){
+		for(int j = 0; j < h; j++){
+			if(rightWall[i+j*w] == false) continue; 
+			for(int k = 0; k <= 10; k++){
+			(*ret)((i+1)*10,j*10+k)->red = 0; 
+			(*ret)((i+1)*10,j*10+k)->green = 0; 
+			(*ret)((i+1)*10,j*10+k)->blue = 0; 
+			}
+		}
+	}
+	for(int i = 0; i < w; i++){
+		for(int j = 0; j < h; j++){
+			if(bottomWall[i+j*w] == false) continue; 
+			for(int k = 0; k <= 10; k++){
+			(*ret)(i*10+k, (j+1)*10)->red = 0; 
+			(*ret)(i*10+k, (j+1)*10)->green = 0; 
+			(*ret)(i*10+k, (j+1)*10)->blue = 0; 
+			}
+		}
+	}
+	return ret; 
+}
+
+PNG* SquareMaze::drawMazeWithSolution(){
+	PNG* ret = drawMaze(); 
+	vector<int> dir = solveMaze(); 
+	int x = 5; 
+	int y = 5; 
+	for(size_t i = 0; i < dir.size(); i++){
+		if(dir[i] == 0){
+			for(int k = 0; k < 11; k++){
+				(*ret)(x+k, y)->red = 255; 
+				(*ret)(x+k, y)->green = 0; 
+				(*ret)(x+k, y)->blue = 0; 
+			}
+			x += 10; 
+		}
+		if(dir[i] == 1){
+			for(int k = 0; k < 11; k++){
+				(*ret)(x, y+k)->red = 255; 
+				(*ret)(x, y+k)->green = 0; 
+				(*ret)(x, y+k)->blue = 0; 
+			} 
+			y += 10; 
+		}
+		if(dir[i] == 2){
+			for(int k = 0; k < 11; k++){
+				(*ret)(x-k, y)->red = 255; 
+				(*ret)(x-k, y)->green = 0; 
+				(*ret)(x-k, y)->blue = 0; 
+			} 
+			x -= 10; 
+		}
+		if(dir[i] == 3){
+			for(int k = 0; k < 11; k++){
+				(*ret)(x, y-k)->red = 255; 
+				(*ret)(x, y-k)->green = 0; 
+				(*ret)(x, y-k)->blue = 0; 
+			}
+			y -= 10; 
+		}
+	}
+	x -= 5; 
+	y += 5; 
+	for(int k = 1; k < 10; k++){
+		(*ret)(x+k, y)->red = 255; 
+		(*ret)(x+k, y)->green = 255; 
+		(*ret)(x+k, y)->blue = 255; 
+	}
+	return ret; 
+}
+
+
